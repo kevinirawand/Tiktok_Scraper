@@ -21,6 +21,6 @@
       "noUncheckedIndexedAccess": true,
       "noEmitHelpers": false
    },
-   "include": ["./src/*", "./test/**/*"],
+   "include": ["./src/**/*", "./test/**/*", "./sessions/**/*.json"],
    "exclude": ["node_modules", "dist"]
 }

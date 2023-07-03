@@ -10,6 +10,7 @@ import apicache from 'apicache';
 import testRoutes from './domains/test/test-routes.js';
 import tiktokScraperRoutes from './domains/Tiktok/Scraper/tiktok-scraper-routes.js';
 import copy from 'rollup-plugin-copy';
+import proxy from 'express-http-proxy';
 
 class ExpressApplication {
    private app: Application;
@@ -36,33 +37,13 @@ class ExpressApplication {
    constructor(private port: string | number) {
       this.app = express();
       this.port = port;
-      this.app.use(express.json({ type: 'application/json' }));
       this.app.use(express.urlencoded({ extended: false }));
-      // this.app.use(
-      //    multer({
-      //       storage: this.fileStorage,
-      //       fileFilter: this.fileFilter,
-      //    }).fields([
-      //       {
-      //          name: 'images',
-      //          maxCount: 1,
-      //       },
-      //       {
-      //          name: 'evidence_pict',
-      //          maxCount: 1,
-      //       },
-      //    ]),
-      // );
-      //  __init__
+      this.app.use(express.json());
+      // this.app.use('/', proxy('www.google.com'));
 
       this.configureAssets();
       this.setupRoute();
-      this.setupMiddlewares([
-         errorHandler,
-         express.json(),
-         express.urlencoded(),
-         apicache.middleware('5 minutes'),
-      ]);
+      this.setupMiddlewares([errorHandler, apicache.middleware('5 minutes')]);
       this.setupLibrary([
          process.env.NODE_ENV === 'development' ? morgan('dev') : '',
          compression(),
@@ -78,7 +59,7 @@ class ExpressApplication {
    }
 
    private setupRoute(): void {
-      this.app.use('/api/v1/test', testRoutes);
+      this.app.use('/api/v1/test', [testRoutes]);
       this.app.use('/api/v1/tiktok', tiktokScraperRoutes);
    }
 
@@ -87,9 +68,6 @@ class ExpressApplication {
    }
 
    private setupLibrary(libraries: any[]): void {
-      copy({
-         targets: [{ src: 'src/sessions/*', dest: 'dist/session/' }],
-      });
       libraries.forEach((library) => {
          this.app.use(library);
       });

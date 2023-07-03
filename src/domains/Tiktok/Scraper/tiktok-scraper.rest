@@ -3,7 +3,7 @@ GET http://localhost:1337/api/v1/tiktok/scrape
 ###
 GET http://localhost:1337/api/v1/tiktok/inject
 
-###
+### MISC
 GET https://t.tiktok.com/api/user/detail/?aid=1988&uniqueId=musiklirik_1&language=it
 
 

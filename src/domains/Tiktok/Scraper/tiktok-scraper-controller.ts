@@ -118,35 +118,62 @@ class TiktokScraperController {
       res: Response,
    ): Promise<Response> => {
       await tiktokScraperServices.init();
-      await tiktokScraperServices.login();
+      // await tiktokScraperServices.login();
 
-      // const dummyTargetSecUid: Array<any> = [
-      //    {
-      //       username: 'dinkesjabarofficial',
-      //       sec_uid:
-      //          'MS4wLjABAAAAmj0tYz7qmnVgdB93at1TIG43IDOORo2a2OH7FqkRE-SjFL291KJ1MG0lJ4w5WRxJ',
-      //    },
-      //    {
-      //       username: 'diskominfo.jabar',
-      //       sec_uid:
-      //          'MS4wLjABAAAAodXalxStCpyOs0_0w0JZ0yYSuvWPO-oVCqgOW9rxkXFZIXzL5yfQUfzdXUHgJrcA',
-      //    },
-      // ];
+      const dummyTargetSecUid: Array<any> = [
+         {
+            username: 'dinkesjabarofficial',
+            sec_uid:
+               'MS4wLjABAAAAmj0tYz7qmnVgdB93at1TIG43IDOORo2a2OH7FqkRE-SjFL291KJ1MG0lJ4w5WRxJ',
+         },
+         {
+            username: 'diskominfo.jabar',
+            sec_uid:
+               'MS4wLjABAAAAodXalxStCpyOs0_0w0JZ0yYSuvWPO-oVCqgOW9rxkXFZIXzL5yfQUfzdXUHgJrcA',
+         },
+      ];
 
-      // await tiktokScraperServices.init();
+      /**
+       * TEST GET RESPONSESIVNESS
+       */
+      const comments = await tiktokScraperServices.getResponseFeedAmount(
+         'dinkesjabarofficial',
+      );
+
+      // console.info(comments);
+
+      /**
+       * THIS TEST INJECT WITH LOGIN
+       * sementara hasil nya gagal
+       */
+      // await tiktokScraperServices.goToUserPage(dummyTargetSecUid[0].username!);
+      // const followerAmount = await tiktokScraperServices.getFollowerAmount();
+      // console.info(followerAmount);
+
+      // let result = await tiktokScraperServices.injectUserFeed(
+      //    dummyTargetSecUid[0].sec_uid!,
+      // );
+      // console.info(result);
 
       // const response = await tiktokScraperServices.getResponseFeedAmount(
-      //    'https://www.tiktok.com/@dinkesjabarofficial/video/7236534223367064838',
+      //    dummyTargetSecUid[0].username!,
       // );
 
       // console.info(response);
+
       // await tiktokScraperServices.goToUserPage(dummyTargetSecUid[0].username!);
       // const followerAmount = await tiktokScraperServices.getFollowerAmount();
 
+      /**
+       * THIS WORK
+       * kendalanya kadang response tidak ada
+       */
       // for (let i: number = 0; i < dummyTargetSecUid.length; i++) {
       //    let result = await tiktokScraperServices.injectUserFeed(
       //       dummyTargetSecUid[i].sec_uid!,
       //    );
+      //    console.info(result);
+
       //    await tiktokScraperServices.goToUserPage(
       //       dummyTargetSecUid[i].username!,
       //    );
@@ -163,7 +190,9 @@ class TiktokScraperController {
       //       console.info(`Like : ${feeds[j].stats.diggCount}`);
       //       console.info(`Comment : ${feeds[j].stats.commentCount}`);
       //       console.info(`Response : IN DEV`);
+      //       console.info(feeds[i]);
       //    }
+      // }
 
       return res.status(200).json({
          code: 200,

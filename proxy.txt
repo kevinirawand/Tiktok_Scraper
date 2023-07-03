@@ -1,4 +1,4 @@
-const proxy = "121.46.64.170	8080	HTTP	🇵🇰 Pakistan	1 second ago
+121.46.64.170	8080	HTTP	🇵🇰 Pakistan	1 second ago
 64.225.8.115	9980	HTTP	🇨🇦 Canada	4 seconds ago
 23.94.187.48	80	HTTP	🇺🇸 United States	4 seconds ago
 204.10.38.147	60479	SOCKS5	🇺🇸 United States	4 seconds ago
@@ -170,4 +170,4 @@ const proxy = "121.46.64.170	8080	HTTP	🇵🇰 Pakistan	1 second ago
 1.180.49.222	7302	SOCKS5	🇨🇳 China	5 minutes ago
 212.42.116.161	8080	HTTP	🇰🇬 Kyrgyzstan	5 minutes ago
 103.103.3.6	8080	HTTP	Unknown	5 minutes ago
-45.33.123.178	42442	SOCKS5	🇺🇸 United States	5 minutes ago"
+45.33.123.178	42442	SOCKS5	🇺🇸 United States	5 minutes ago

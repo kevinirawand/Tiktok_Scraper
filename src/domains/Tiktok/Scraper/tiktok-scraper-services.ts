@@ -1,6 +1,4 @@
 import puppeteer from 'puppeteer-extra';
-import RecaptchaPlugin from 'puppeteer-extra-plugin-recaptcha';
-import pluginStealth from 'puppeteer-extra-plugin-stealth';
 import Signer from 'tiktok-signature';
 import axios from 'axios';
 import { Url } from 'url';
@@ -14,13 +12,14 @@ import logger from '../../../utils/logger';
 import delay from '../../../utils/delay';
 import accounts from '../../../configs/tiktok-bot-account';
 import path from 'path';
+import UserAgent from 'user-agents';
+import fs from 'fs';
 
 class TiktokScraperServices {
    private browser: any;
    private page: any;
    private cookiesPath: string = path.join(
-      __dirname,
-      '/sessions/' + accounts[0]!.username + '.json',
+      './src/sessions/' + accounts[0]!.username + '.json',
    );
 
    private TT_REQ_USER_AGENT: string =
@@ -31,7 +30,21 @@ class TiktokScraperServices {
          this.browser = await puppeteer.launch({
             headless: false,
             ignoreDefaultArgs: ['--disable-extensions'],
-            args: ['--use-gl=egl', '--no-sandbox', '--disable-setuid-sandbox'],
+            args: [
+               '--use-gl=egl',
+               '--no-sandbox',
+               '--disable-setuid-sandbox',
+               '--disable-gpu',
+               '--disable-dev-shm-usage',
+               '--no-first-run',
+               '--no-sandbox',
+               '--no-zygote',
+               '--deterministic-fetch',
+               '--disable-features=IsolateOrigins',
+               '--disable-site-isolation-trials',
+               '--proxy-server=http://64.225.8.115:9980',
+            ],
+            dumpio: true,
          });
       }
       if (!this.page) {
@@ -39,12 +52,6 @@ class TiktokScraperServices {
       }
 
       this.page.setDefaultNavigationTimeout(0);
-      puppeteer.use(pluginStealth());
-      // this.browser = await puppeteer.launch({
-      //    headless: false,
-      // });
-      // this.page = await this.browser.newPage();
-      // await this.page.goto(`https://www.tiktok.com/`);
    };
 
    public goToUserPage = async (username: string): Promise<void> => {
@@ -160,42 +167,97 @@ class TiktokScraperServices {
       return parseInt(likeAmount);
    };
 
-   public getResponseFeedAmount = async (feedUrl: string): Promise<number> => {
-      await this.page.goto(feedUrl);
-      await this.page.reload();
+   public getResponseFeedAmount = async (username: string): Promise<number> => {
+      const userAgent = new UserAgent();
+      await this.page.setUserAgent(userAgent.random().toString());
+      const context = await this.browser.createIncognitoBrowserContext();
+      const page = await context.newPage();
+
+      await page.goto(
+         'https://www.tiktok.com/@dinkesjabarofficial/video/7236534223367064838',
+         { waitUntil: 'load' },
+      );
+
       await delay(5000);
+      let isCaptchaShow: boolean = await page
+         .$eval('#tiktok-verify-ele', () => true)
+         .catch(() => false);
 
-      // const commentContainerElement = await this.page.$(
-      //    '#main-content-video_detail > div > div.tiktok-12kupwv-DivContentContainer.ege8lhx2 > div > div.tiktok-x4xlc7-DivCommentContainer.e1a7v7ak0 > div.tiktok-1iblfn2-DivCommentContainer.ekjxngi0 > div',
-      // );
+      isCaptchaShow
+         ? logger.info('CAPTCHA IS SHOW...')
+         : logger.info('CAPTCHA NOT SHOW!');
 
-      // const commentContainerElement = await this.page.evaluate(() =>
-      //    document.querySelector(
-      //       '',
-      //    ),
-      // );
-
-      const usePromise = new Promise((resolve, reject) => {
-         this.page.on('response', async (response: any) => {
+      const comments = new Promise((resolve, reject) => {
+         page.on('response', async (response: any) => {
             if (
                response
                   .url()
                   .includes(`https://www.tiktok.com/api/comment/list/`)
             ) {
+               await this.page.setRequestInterception(true);
+
+               console.info('THIS INCLUDE COMMENT LIST');
+               console.info(response.url());
                try {
                   const newRespon = await response.json();
                   console.info(newRespon);
                   resolve(newRespon);
                } catch (error) {
-                  console.log('NOT JSON Format');
+                  logger.error(error);
                }
+            } else {
+               logger.info('NO ONE INCLUDED COMMENT LIST');
             }
          });
       });
 
-      console.info(usePromise);
+      // while (isCaptchaShow) {
+      //    logger.info('CHAPTCHA IS SHOWED');
+      //    await this.page.setUserAgent(userAgent.random().toString());
+
+      //    await delay(3000);
+      //    await this.page.reload();
+      //    await delay(5000);
+
+      //    isCaptchaShow = await this.page
+      //       .$eval('#tiktok-verify-ele', () => true)
+      //       .catch(() => false);
+      // }
+
+      console.info(comments);
 
       return 0;
+   };
+
+   public captchaSolver = async (username: string): Promise<void> => {
+      /**
+       * GET CAPTCHA IMAGE
+       */
+      await delay(3000);
+      const IMAGE_SELECTOR = '#captcha-verify-image';
+      let imageHref = await this.page.evaluate((element: any) => {
+         return document
+            .querySelector(element)
+            .getAttribute('src')
+            .replace('/', '');
+      }, IMAGE_SELECTOR);
+
+      const filePath: string =
+         './src/captchas/' +
+         username +
+         new Date().getTime() +
+         '-catpcha_image' +
+         '.jpeg';
+      const getImageTab = await this.browser.newPage();
+      const viewSource = await getImageTab.goto(imageHref);
+      fs.writeFile(filePath, await viewSource.buffer(), function (err) {
+         if (err) {
+            logger.error(err);
+         }
+
+         logger.info('Captcha image was saved!');
+      });
+      await getImageTab.close();
    };
 
    public goToFeedPage = async (feedUrl: string): Promise<void> => {
@@ -307,9 +369,9 @@ class TiktokScraperServices {
    };
 
    public injectUserFeed = async (secUid: string): Promise<any> => {
-      const usernameTesting: string = 'musiklirik_1';
+      // const usernameTesting: string = 'musiklirik_1';
       const payloads = await this.getSignature(secUid);
-
+      console.info(payloads);
       const option = {
          method: 'GET',
          headers: {
@@ -324,16 +386,25 @@ class TiktokScraperServices {
 
    public writeCookies = async (): Promise<void> => {
       const cookiesObject = await this.page.cookies();
-      console.info(cookiesObject);
+      // console.info(cookiesObject);
+      console.info(this.cookiesPath);
 
       jsonfile.writeFileSync(this.cookiesPath, cookiesObject, { spaces: 2 });
+
+      const cookiesArr = jsonfile.readFileSync(this.cookiesPath);
+      if (cookiesArr.length !== 0) {
+         for (let cookie of cookiesArr) {
+            await this.page.setCookie(cookie);
+         }
+         logger.info('Session has been loaded in the browser');
+      }
    };
 
    public login = async (): Promise<any> => {
       await this.page.goto('https://www.tiktok.com/', {
-         waitUntil: ['load'],
-         timeout: 0,
+         waitUntil: 'networkidle2',
       });
+
       await delay(3000);
 
       const button = await this.page.$('#header-login-button');
@@ -345,25 +416,35 @@ class TiktokScraperServices {
          '#loginContainer > div > div > a:nth-child(3)',
       );
       await loginWithPhoneNumber.evaluate((button: any) => button.click());
-
       await delay(3000);
 
       const loginWithPassword = await this.page.$(
          '#loginContainer > div.tiktok-xabtqf-DivLoginContainer.exd0a430 > form > a',
       );
       await loginWithPassword.evaluate((button: any) => button.click());
+      await delay(3000);
 
-      await this.page.type('input[name="mobile"]', accounts[0]!.phone_number);
-      await this.page.type('input[type="password"]', accounts[0]!.phone_number);
-      await this.page.click('button[type="submit"]');
+      await this.page.type('input[name="mobile"]', accounts[0]!.phone_number, {
+         delay: 100,
+      });
+      await delay(3000);
+
+      await this.page.type(
+         'input[type="password"]',
+         accounts[0]!.phone_number,
+         { delay: 100 },
+      );
+      await delay(3000);
+
+      await this.page.click(
+         '#loginContainer > div.tiktok-xabtqf-DivLoginContainer.exd0a430 > form > button',
+      );
+      await delay(5000);
+
       await this.writeCookies();
+      await delay(600000);
+      await this.page.waitForTimeout(600000000);
    };
-
-   // public login = async (): Promise<any> => {
-   //    logger.info(`Login with ${}`);
-
-   //    const cookiesObject = await this.page.cookies();
-   // };
 }
 
 export default new TiktokScraperServices();
