@@ -17,7 +17,7 @@ module.exports = (sequelize: any, DataTypes: any) => {
          tiktok_username: DataTypes.STRING,
          url: DataTypes.STRING,
          follower_count: DataTypes.STRING,
-         like_count: DataTypes.INTEGER,
+         view_count: DataTypes.INTEGER,
          comment_count: DataTypes.INTEGER,
          response_count: DataTypes.INTEGER,
          taken_at: DataTypes.DATE,

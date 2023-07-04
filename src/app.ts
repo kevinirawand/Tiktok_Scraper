@@ -59,7 +59,7 @@ class ExpressApplication {
    }
 
    private setupRoute(): void {
-      this.app.use('/api/v1/test', [testRoutes]);
+      // this.app.use('/api/v1/test', [testRoutes]);
       this.app.use('/api/v1/tiktok', tiktokScraperRoutes);
    }
 
